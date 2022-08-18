@@ -14,10 +14,14 @@ fn main() {
     let ten_millis = time::Duration::from_millis(100);
     let now = time::Instant::now();
 
-    thread::sleep(ten_millis);
+    //thread::sleep(ten_millis);
 
     models::blockchain::Blockchain::add_block(&mut bchain, "message2".to_string());
     models::blockchain::Blockchain::add_block(&mut bchain, "message3".to_string());
+
+
+    let client = models::keyGen::Wallet::generate_wallet_keys();
+    println!("This is the client {:?}", client)
 
 
 }
