@@ -21,7 +21,9 @@ fn main() {
 
 
     let client = models::keyGen::Wallet::generate_wallet_keys();
-    println!("This is the client {:?}", client)
+    println!("This is the client {:?}", client);
+    // Now sign a message with the keys
+    client.sign_message("hello World".to_string());
 
 
 }
