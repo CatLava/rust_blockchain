@@ -1,4 +1,4 @@
-use super::blockchain::Blockchain;
+use super::{blockchain::Blockchain, keyGen::BlockchainMessage};
 use chrono::prelude::*;
 use sha2::{Sha256, Digest};
 use serde::{Deserialize, Serialize};

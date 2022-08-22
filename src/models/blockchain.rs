@@ -1,6 +1,7 @@
 use chrono::prelude::*;
 // internal module call
-use super::block::{Block, TransactionData,  };
+use super::{block::{Block, TransactionData,  }, keyGen::BlockchainMessage};
+use secp256k1::{Secp256k1, Message, Signing, All, SecretKey, PublicKey};
 
 
 type Blocks = Vec<Block>;
@@ -14,6 +15,8 @@ pub struct Blockchain {
     // defining POW difficulty setting
     pub difficulty: usize
 }
+
+
 
 impl Blockchain{
     pub fn new(difficulty: usize) -> Self {
@@ -53,5 +56,44 @@ impl Blockchain{
         new_block.mine(self.clone());
         self.chain.push(new_block.clone());
         println!("New block added to chain -> {:?}", new_block);
+    }
+
+    pub fn process_blockchain_message(message: &BlockchainMessage) -> Result<(), secp256k1::Error> {
+        
+        let secp: Secp256k1<All> = Secp256k1::new();
+        let res = secp.verify_ecdsa(&message.hashed_message, &message.signed_hash, &message.pub_key);
+        return res
+    }
+
+    
+}
+
+#[derive(Debug, Clone)]
+pub struct MessageQueue {
+    pub queue: Vec<BlockchainMessage>
+}
+
+impl MessageQueue {
+    pub fn new() -> Self {
+        let mut q: Vec<BlockchainMessage> = Vec::new();
+        let new = MessageQueue {queue: q};
+        return new
+    }
+
+    pub fn add_message_to_q(&mut self, message: &BlockchainMessage) {
+        let add_check = Blockchain::process_blockchain_message(message);
+        match add_check {
+            Ok(()) => self.queue.push(message.to_owned()),
+            Err(e) => println!("will not process transaction: {e:?}")
+        }
+        
+    }
+
+    pub fn print_q(&mut self) {
+        println!("q message");
+        for m in self.queue.iter() {
+            println!("THis is your message");
+            println!("{:?}", m);
+        }
     }
 }
