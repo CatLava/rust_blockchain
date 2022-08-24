@@ -1,4 +1,4 @@
-use super::{blockchain::Blockchain, keyGen::BlockchainMessage};
+use super::{blockchain::Blockchain, key_gen::BlockchainMessage, message_handler::{MessageQueue, StringedMessageQueue}};
 use chrono::prelude::*;
 use sha2::{Sha256, Digest};
 use serde::{Deserialize, Serialize};
@@ -21,11 +21,11 @@ pub struct Block {
     // current block hash
     pub hash: String,
 
-    pub data: TransactionData,
+    pub data: StringedMessageQueue,
 }
 
 impl Block{
-    pub fn new(index: u64,  previous_hash: String, data_pass: TransactionData ) -> Self {
+    pub fn new(index: u64,  previous_hash: String, data_pass: StringedMessageQueue ) -> Self {
         // blck to be created
         let mut block = Block {
             index: index,
@@ -53,10 +53,7 @@ impl Block{
         hasher.update(serialize_block_data);
 
         let res = hasher.finalize();
-
         format!("{:x}", res)
-
-        
     }
 
     pub fn mine (&mut self, blockchain: Blockchain) {

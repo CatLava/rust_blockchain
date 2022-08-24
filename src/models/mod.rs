@@ -2,4 +2,6 @@ pub mod block;
 
 pub mod blockchain;
 
-pub mod keyGen;
+pub mod key_gen;
+
+pub mod message_handler;

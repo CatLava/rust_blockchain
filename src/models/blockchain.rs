@@ -1,7 +1,12 @@
 use chrono::prelude::*;
+use serde::Serialize;
 // internal module call
-use super::{block::{Block, TransactionData,  }, keyGen::BlockchainMessage};
+use super::message_handler::*;
+use super::key_gen::{Wallet, BlockchainMessage };
+use super::{block::{Block, TransactionData,  }};
 use secp256k1::{Secp256k1, Message, Signing, All, SecretKey, PublicKey};
+use sha2::{Sha256, Digest};
+
 
 
 type Blocks = Vec<Block>;
@@ -20,6 +25,11 @@ pub struct Blockchain {
 
 impl Blockchain{
     pub fn new(difficulty: usize) -> Self {
+        // create keys for initial block
+        let genesis_keys = Wallet::generate_wallet_keys();
+        let message = genesis_keys.sign_message("gensis block".to_string());
+        let mut message_q = MessageQueue::new();
+        message_q.add_message_to_q(&message);
         // Genesis block creation
         let mut genesis_block = Block {
             index: 0,
@@ -27,7 +37,7 @@ impl Blockchain{
             proof_of_work: u64::default(),
             previous_hash: String::default(),
             hash: String::default(),
-            data: TransactionData{message: "Gensis Block message".to_owned()}
+            data: StringedMessageQueue::new(message_q),
         };
         genesis_block.hash = genesis_block.generate_block_hash();
         println!("{:?}", genesis_block);
@@ -46,11 +56,11 @@ impl Blockchain{
     // Add a compute hash with a nonce
     // need to fix previous hash output
     // there is no state on this blockchain
-    pub fn add_block(&mut self, data_pass: String) {
+    pub fn add_block(&mut self, data_pass: MessageQueue) {
         let mut new_block = Block::new(
             self.chain.len() as u64,
             self.chain[&self.chain.len() - 1].hash.clone(),
-            TransactionData{message: data_pass},
+            StringedMessageQueue::new( data_pass),
         );
 
         new_block.mine(self.clone());
@@ -58,42 +68,13 @@ impl Blockchain{
         println!("New block added to chain -> {:?}", new_block);
     }
 
+
     pub fn process_blockchain_message(message: &BlockchainMessage) -> Result<(), secp256k1::Error> {
         
         let secp: Secp256k1<All> = Secp256k1::new();
         let res = secp.verify_ecdsa(&message.hashed_message, &message.signed_hash, &message.pub_key);
         return res
-    }
-
-    
+    }  
 }
 
-#[derive(Debug, Clone)]
-pub struct MessageQueue {
-    pub queue: Vec<BlockchainMessage>
-}
 
-impl MessageQueue {
-    pub fn new() -> Self {
-        let mut q: Vec<BlockchainMessage> = Vec::new();
-        let new = MessageQueue {queue: q};
-        return new
-    }
-
-    pub fn add_message_to_q(&mut self, message: &BlockchainMessage) {
-        let add_check = Blockchain::process_blockchain_message(message);
-        match add_check {
-            Ok(()) => self.queue.push(message.to_owned()),
-            Err(e) => println!("will not process transaction: {e:?}")
-        }
-        
-    }
-
-    pub fn print_q(&mut self) {
-        println!("q message");
-        for m in self.queue.iter() {
-            println!("THis is your message");
-            println!("{:?}", m);
-        }
-    }
-}
