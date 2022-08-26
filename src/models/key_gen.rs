@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Copy)]
 pub struct Wallet {
     private_key: SecretKey,
-    public_key: PublicKey
+    pub public_key: PublicKey
 }
 
 #[derive(Debug, Clone, Hash)]

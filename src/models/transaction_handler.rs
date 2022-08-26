@@ -1,15 +1,18 @@
 // This will handle transactions and balances
 use std::collections::HashMap;
 
-pub struct Balanace {
-    public_key: String,
-    coins: u16,
+pub struct Balance {
+    pub public_key: String,
+    pub coins: u16,
 }
 
-impl Balance {
+pub struct Transaction {
+    pub receiver_public_key: String,
+    pub amount_of_coints: u16,
+    pub message: Option<String> // non-essential option for message in a transaction
+}
+
+impl Transaction {
 
 }
 
-pub struct BlockchainLedger {
-    ledger: HashMap<Balanace::public_key, Balanace::coins>
-}

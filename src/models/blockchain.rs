@@ -6,6 +6,9 @@ use super::key_gen::{Wallet, BlockchainMessage };
 use super::{block::{Block, TransactionData,  }};
 use secp256k1::{Secp256k1, Message, Signing, All, SecretKey, PublicKey};
 use sha2::{Sha256, Digest};
+use super::message_handler::MessageQueue;
+use super::transaction_handler::Balance;
+use std::collections::HashMap;
 
 
 
@@ -18,7 +21,9 @@ pub struct Blockchain {
     // chain that stores individual blocks
     pub chain: Blocks,
     // defining POW difficulty setting
-    pub difficulty: usize
+    pub difficulty: usize,
+
+    pub ledger: BlockchainLedger,
 }
 
 
@@ -30,6 +35,13 @@ impl Blockchain{
         let message = genesis_keys.sign_message("gensis block".to_string());
         let mut message_q = MessageQueue::new();
         message_q.add_message_to_q(&message);
+
+        // Create initial coins and balance for ledger
+        let initial_coins = Balance {
+            public_key: genesis_keys.public_key.to_string(),
+            coins: 10,
+        };
+        let ledger = BlockchainLedger::new(initial_coins);
         // Genesis block creation
         let mut genesis_block = Block {
             index: 0,
@@ -47,7 +59,8 @@ impl Blockchain{
         let blockchain = Blockchain {
             genesis_block,
             chain,
-            difficulty
+            difficulty,
+            ledger
         };
 
         return blockchain
@@ -75,6 +88,20 @@ impl Blockchain{
         let res = secp.verify_ecdsa(&message.hashed_message, &message.signed_hash, &message.pub_key);
         return res
     }  
+}
+
+#[derive(Debug, Clone)]
+pub struct BlockchainLedger {
+    ledger: HashMap<String, u16>
+}
+
+
+impl BlockchainLedger {
+    pub fn new(balance: Balance) -> Self {
+        return BlockchainLedger{ 
+            ledger: HashMap::from([(balance.public_key, balance.coins)])
+        }
+    }
 }
 
 

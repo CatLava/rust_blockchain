@@ -14,6 +14,7 @@ fn main() {
     message_q.add_message_to_q(&message);
 
     bchain.add_block(message_q);
+    println!("{:?}", bchain);
 
 
     let ten_millis = time::Duration::from_millis(100);
