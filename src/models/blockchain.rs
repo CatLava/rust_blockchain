@@ -7,8 +7,11 @@ use super::{block::{Block, TransactionData,  }};
 use secp256k1::{Secp256k1, Message, Signing, All, SecretKey, PublicKey};
 use sha2::{Sha256, Digest};
 use super::message_handler::MessageQueue;
-use super::transaction_handler::Balance;
+use super::transaction_handler::{Balance, Transaction};
+use std::borrow::BorrowMut;
+use std::cell::RefCell;
 use std::collections::HashMap;
+use std::rc::Rc;
 
 
 
@@ -32,7 +35,7 @@ impl Blockchain{
     pub fn new(difficulty: usize) -> Self {
         // create keys for initial block
         let genesis_keys = Wallet::generate_wallet_keys();
-        let message = genesis_keys.sign_message("gensis block".to_string());
+        let message = genesis_keys.sign_transaction("gensis block".to_string());
         let mut message_q = MessageQueue::new();
         message_q.add_message_to_q(&message);
 
@@ -90,9 +93,10 @@ impl Blockchain{
     }  
 }
 
+
 #[derive(Debug, Clone)]
 pub struct BlockchainLedger {
-    ledger: HashMap<String, u16>
+    pub ledger: HashMap<String, u16>
 }
 
 
@@ -101,6 +105,27 @@ impl BlockchainLedger {
         return BlockchainLedger{ 
             ledger: HashMap::from([(balance.public_key, balance.coins)])
         }
+    }
+
+    pub fn check_balance(&mut self, pub_key: String) {
+        if self.ledger.contains_key(&pub_key) {
+            println!("Your balance {:?}", self.ledger.get(&pub_key));
+        }
+        else {
+            println!("no match");
+            println!("{:?}", self);
+            println!("{:?}", &pub_key);
+        }
+    }
+
+    pub fn emit_funds(&mut self, transaction: Transaction) {
+        if self.ledger.contains_key(&transaction.receiver_public_key) {
+            *self.ledger.get_mut(&transaction.receiver_public_key).unwrap() += transaction.amount_of_coins;
+            
+        } else {
+            self.ledger.insert(transaction.receiver_public_key, transaction.amount_of_coins );
+        }
+
     }
 }
 

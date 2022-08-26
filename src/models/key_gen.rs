@@ -33,15 +33,15 @@ impl Wallet {
         wallet
     }
     // This is regardless of what happens, this signs whatever transaction
-    pub fn sign_message(self, message: String) -> BlockchainMessage  {
+    pub fn sign_transaction(self, transaction: String) -> BlockchainMessage  {
         let secp: Secp256k1<All> = Secp256k1::new();
-        let hashed_message = Message::from_hashed_data::<sha256::Hash>(message.as_bytes());
+        let hashed_message = Message::from_hashed_data::<sha256::Hash>(transaction.as_bytes());
         let sig = secp.sign_ecdsa(&hashed_message, &self.private_key);
         //let (fake_secret_key, fake_pub_key) = secp.generate_keypair(&mut OsRng);
         //println!("{:?}", hashed_message);
         //println!("{:?}", sig);
         //println!("{:?}", secp.verify_ecdsa(&hashed_message, &sig, &fake_pub_key));
-        return BlockchainMessage { message: message, hashed_message: hashed_message, signed_hash: sig, pub_key: self.public_key }
+        return BlockchainMessage { message: transaction, hashed_message: hashed_message, signed_hash: sig, pub_key: self.public_key }
 
     }
 }
