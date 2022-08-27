@@ -5,6 +5,8 @@ use secp256k1::hashes::sha256;
 use secp256k1::ecdsa::Signature;
 use serde::{Deserialize, Serialize};
 
+use super::transaction_handler::Transaction;
+
 
 
 
@@ -16,7 +18,7 @@ pub struct Wallet {
 
 #[derive(Debug, Clone, Hash)]
 pub struct BlockchainMessage {
-    pub message: String,
+    pub message: Transaction,
     pub hashed_message: Message,
     pub signed_hash: Signature,
     pub pub_key: PublicKey
@@ -33,9 +35,9 @@ impl Wallet {
         wallet
     }
     // This is regardless of what happens, this signs whatever transaction
-    pub fn sign_transaction(self, transaction: String) -> BlockchainMessage  {
+    pub fn sign_transaction(self, transaction: Transaction) -> BlockchainMessage  {
         let secp: Secp256k1<All> = Secp256k1::new();
-        let hashed_message = Message::from_hashed_data::<sha256::Hash>(transaction.as_bytes());
+        let hashed_message = Message::from_hashed_data::<sha256::Hash>(transaction.to_string().as_bytes());
         let sig = secp.sign_ecdsa(&hashed_message, &self.private_key);
         //let (fake_secret_key, fake_pub_key) = secp.generate_keypair(&mut OsRng);
         //println!("{:?}", hashed_message);

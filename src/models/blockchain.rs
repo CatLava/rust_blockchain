@@ -35,7 +35,12 @@ impl Blockchain{
     pub fn new(difficulty: usize) -> Self {
         // create keys for initial block
         let genesis_keys = Wallet::generate_wallet_keys();
-        let message = genesis_keys.sign_transaction("gensis block".to_string());
+        let gen_t = Transaction {
+            receiver_public_key: genesis_keys.public_key.to_string(),
+            amount_of_coins: 8,
+            message: Some("hello".to_string()),
+        };
+        let message = genesis_keys.sign_transaction(gen_t);
         let mut message_q = MessageQueue::new();
         message_q.add_message_to_q(&message);
 
@@ -107,25 +112,42 @@ impl BlockchainLedger {
         }
     }
 
-    pub fn check_balance(&mut self, pub_key: String) {
-        if self.ledger.contains_key(&pub_key) {
-            println!("Your balance {:?}", self.ledger.get(&pub_key));
+    pub fn check_balance(&mut self, pub_key: &String) -> &u16 {
+        if self.ledger.contains_key(pub_key) {
+            println!("Your balance {:?}", self.ledger.get(pub_key));
+            return self.ledger.get(pub_key).unwrap_or(&0)
         }
         else {
             println!("no match");
             println!("{:?}", self);
             println!("{:?}", &pub_key);
+            return &0
         }
     }
 
-    pub fn emit_funds(&mut self, transaction: Transaction) {
+    pub fn emit_funds(&mut self, transaction: &Transaction) {
         if self.ledger.contains_key(&transaction.receiver_public_key) {
-            *self.ledger.get_mut(&transaction.receiver_public_key).unwrap() += transaction.amount_of_coins;
-            
+            *self.ledger.get_mut(&transaction.receiver_public_key).unwrap() += transaction.amount_of_coins; 
         } else {
-            self.ledger.insert(transaction.receiver_public_key, transaction.amount_of_coins );
+            self.ledger.insert(transaction.receiver_public_key.to_owned(), transaction.amount_of_coins );
         }
 
+    }
+
+    pub fn reduce_funds(&mut self, transaction: &Transaction, sender_public_key: &String) {
+        *self.ledger.get_mut(sender_public_key).unwrap() -= transaction.amount_of_coins; 
+    }
+
+    pub fn transfer_funds(&mut self, transaction: Transaction, sender_public_key: String) {
+        if self.ledger.contains_key(&sender_public_key) {
+            // need to check balance first
+            if self.check_balance(&sender_public_key) > &transaction.amount_of_coins { 
+                self.emit_funds(&transaction);
+                self.reduce_funds(&transaction, &sender_public_key);
+            } else {
+                println!("no transaction made, insufficient funds")
+            }
+        }
     }
 }
 
