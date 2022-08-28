@@ -78,6 +78,10 @@ impl Blockchain{
     // need to fix previous hash output
     // there is no state on this blockchain
     pub fn add_block(&mut self, data_pass: MessageQueue) {
+        for data in data_pass.queue.iter() {
+            self.ledger.transfer_funds(&data.message, &data.pub_key.to_string());
+            println!("Transcation added to ledger")
+        }
         let mut new_block = Block::new(
             self.chain.len() as u64,
             self.chain[&self.chain.len() - 1].hash.clone(),
@@ -138,8 +142,8 @@ impl BlockchainLedger {
         *self.ledger.get_mut(sender_public_key).unwrap() -= transaction.amount_of_coins; 
     }
 
-    pub fn transfer_funds(&mut self, transaction: Transaction, sender_public_key: String) {
-        if self.ledger.contains_key(&sender_public_key) {
+    pub fn transfer_funds(&mut self, transaction: &Transaction, sender_public_key: &String) {
+        if self.ledger.contains_key(sender_public_key) {
             // need to check balance first
             if self.check_balance(&sender_public_key) > &transaction.amount_of_coins { 
                 self.emit_funds(&transaction);
