@@ -20,6 +20,7 @@ impl MessageQueue {
     }
 
     pub fn add_message_to_q(&mut self, message: &BlockchainMessage) {
+        // verify signature before adding to queue
         let add_check = Blockchain::process_blockchain_message(message);
         match add_check {
             Ok(()) => self.queue.push(message.to_owned()),

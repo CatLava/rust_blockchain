@@ -2,9 +2,12 @@ use std::net::TcpListener;
 use std::io;
 use crate::models::block::Block;
 use crate::models::blockchain::*;
+use crate::models::key_gen::Wallet;
 
 
 pub fn main() {
+    let mut Bstate = State::new();
+    
     loop {
         println!("This is a simple blockchain: Options below");
         println!("1. Create blockchain, genesis node");
@@ -21,15 +24,15 @@ pub fn main() {
             "4" => Menu::Create_Transaction,
             _ => Menu::Invalid,
         };
-        let action = match mat {
-            Menu::Genesis => Blockchain::new(1),
-            _ => Blockchain::new(1),
-        };
+        if mat == Menu::Genesis {
+            Bstate.gensis();
+        }
+
     }
 
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Menu {
     Genesis,
     Create_Client_Keys,
@@ -37,3 +40,29 @@ pub enum Menu {
     Create_Transaction,
     Invalid
 }
+
+pub struct State {
+    state: bool,
+    blockchain: Option<Blockchain>,
+    wallets: Option<Vec<Wallet>>,
+}
+
+impl State {
+    pub fn new() -> Self {
+        State {
+            state: false,
+            blockchain: None,
+            wallets: None,
+        }
+    }
+
+    pub fn gensis(&mut self) {
+        if self.state == true {
+            println!("Blockchain already running");
+            return 
+        }
+        self.state = true;
+        self.blockchain = Some(Blockchain::new(1));
+    }
+}
+
