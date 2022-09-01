@@ -35,12 +35,12 @@ impl Blockchain{
     pub fn new(difficulty: usize) -> Self {
         // create keys for initial block
         let genesis_keys = Wallet::generate_wallet_keys();
-        let gen_t = Transaction {
+        let t1 = Transaction {
             receiver_public_key: genesis_keys.public_key.to_string(),
             amount_of_coins: 8,
             message: Some("hello".to_string()),
         };
-        let message = genesis_keys.sign_transaction(gen_t);
+        let message = genesis_keys.sign_transaction(t1);
         let mut message_q = MessageQueue::new();
         message_q.add_message_to_q(&message);
 
@@ -78,10 +78,6 @@ impl Blockchain{
     // need to fix previous hash output
     // there is no state on this blockchain
     pub fn add_block(&mut self, data_pass: MessageQueue) {
-        for data in data_pass.queue.iter() {
-            self.ledger.transfer_funds(&data.message, &data.pub_key.to_string());
-            println!("Transcation added to ledger")
-        }
         let mut new_block = Block::new(
             self.chain.len() as u64,
             self.chain[&self.chain.len() - 1].hash.clone(),
@@ -115,7 +111,6 @@ impl BlockchainLedger {
             ledger: HashMap::from([(balance.public_key, balance.coins)])
         }
     }
-
     pub fn check_balance(&mut self, pub_key: &String) -> &u16 {
         if self.ledger.contains_key(pub_key) {
             println!("Your balance {:?}", self.ledger.get(pub_key));

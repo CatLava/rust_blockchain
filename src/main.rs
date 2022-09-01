@@ -33,13 +33,6 @@ fn main() {
     bchain.add_block(message_q);
     //println!("{:?}", bchain);
 
-
-    bchain.ledger.check_balance(&client_keys.public_key.to_string());
-    println!("{:?}", bchain.ledger);
-
-
-
-    println!("{:?}", bchain.ledger);
     server::menu::main();
 
 
