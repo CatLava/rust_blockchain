@@ -143,6 +143,7 @@ impl BlockchainLedger {
             if self.check_balance(&sender_public_key) > &transaction.amount_of_coins { 
                 self.emit_funds(&transaction);
                 self.reduce_funds(&transaction, &sender_public_key);
+                println!("Successful transaction, check the ledger")
             } else {
                 println!("no transaction made, insufficient funds")
             }

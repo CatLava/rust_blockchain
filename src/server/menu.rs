@@ -13,24 +13,21 @@ pub fn main() {
     let mut Bstate = State::new();
     
     loop {
-        println!("This is a simple blockchain: Options below");
-        println!("1. Create blockchain, genesis node");
-        println!("2. Create client keys");
-        println!("3. List client keys");
-        println!("4. Create transaction");
-        println!("5. Request Funds");
+        Menu::show_menu();
         let mut entry = String::new();
         io::stdin().read_line(&mut entry).expect("need a number");
-        println!("number son, {:?}", entry);
+        println!("Selection, {:?}", entry.trim());
         let mat = match entry.trim() {
             "1" => Menu::Genesis,
             "2" => Menu::CreateClientKeys,
             "3" => Menu::ListClientKeys,
-            "4" => Menu::CreateTransaction,
+            "4" => Menu::ListLedger,
             "5" => Menu::RequestFunds,
-            "6" => Menu::ListLedger,
+            "6" => Menu::SendFunds,
             _ => Menu::Invalid,
         };
+        // this should be a match statement
+        // menu should map to functions with no output or same output
         if mat == Menu::Genesis {
             Bstate.gensis();
         } else if mat == Menu::CreateClientKeys  {
@@ -41,6 +38,8 @@ pub fn main() {
             Bstate.list_ledger();
         } else if mat == Menu::RequestFunds {
             Bstate.request_funds()
+        }  else if mat == Menu::SendFunds {
+            Bstate.transfer_funds()
         }
 
     }
@@ -52,10 +51,22 @@ pub enum Menu {
     Genesis,
     CreateClientKeys,
     ListClientKeys,
-    CreateTransaction,
     RequestFunds,
     ListLedger,
+    SendFunds,
     Invalid
+}
+
+impl Menu {
+    pub fn show_menu() {
+        println!("This is a simple blockchain: Options below");
+        println!("1. Create blockchain, genesis node");
+        println!("2. Create client keys");
+        println!("3. List client keys");
+        println!("4. List Ledger");
+        println!("5. Request Funds");
+        println!("6. Send Funds");
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -99,12 +110,17 @@ impl State {
 
     pub fn request_funds(&mut self) {
         let transaction = match self.construct_transaction() {
-            Ok(v) => self.blockchain.ledger.emit_funds(&v),
+            Ok(v) => {self.blockchain.ledger.emit_funds(&v);
+                                    println!("Funds emitted")},
             Err(e) => println!("error {e:?}"),
         };
         transaction;
-        
-        
+    }
+
+    pub fn transfer_funds(&mut self) {
+        let transaction1 = self.construct_transaction().unwrap();
+        let sender_key = self.select_key().unwrap();
+        self.blockchain.ledger.transfer_funds(&transaction1, &sender_key)
     }
 
     fn select_key(&mut self) -> Option<String> {
@@ -118,11 +134,10 @@ impl State {
         io::stdin().read_line(&mut entry).expect("Select a key");
         let entry: i32 =  entry.trim().parse::<i32>().unwrap_or_else(|err| {
             println!("invalid entry {}", err);
-            //self.select_key();
             return -1
-            //break 0;
         });
-        if entry == -1 || entry as usize > self.wallets.len() {
+
+        if entry == -1 || entry as usize >= self.wallets.len() {
             return None;
         };
         
