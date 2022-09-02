@@ -17,29 +17,17 @@ pub fn main() {
         let mut entry = String::new();
         io::stdin().read_line(&mut entry).expect("need a number");
         println!("Selection, {:?}", entry.trim());
-        let mat = match entry.trim() {
-            "1" => Menu::Genesis,
-            "2" => Menu::CreateClientKeys,
-            "3" => Menu::ListClientKeys,
-            "4" => Menu::ListLedger,
-            "5" => Menu::RequestFunds,
-            "6" => Menu::SendFunds,
-            _ => Menu::Invalid,
-        };
+        let mat = Menu::convert_to_menu(entry);
         // this should be a match statement
         // menu should map to functions with no output or same output
-        if mat == Menu::Genesis {
-            Bstate.gensis();
-        } else if mat == Menu::CreateClientKeys  {
-            Bstate.create_keys();
-        } else if mat == Menu::ListClientKeys {
-            Bstate.list_keys();
-        } else if mat == Menu::ListLedger  {
-            Bstate.list_ledger();
-        } else if mat == Menu::RequestFunds {
-            Bstate.request_funds()
-        }  else if mat == Menu::SendFunds {
-            Bstate.transfer_funds()
+        match mat {
+            Menu::Genesis => Bstate.gensis(),
+            Menu::CreateClientKeys => Bstate.create_keys(),
+            Menu::ListClientKeys => Bstate.list_keys(),
+            Menu::ListLedger => Bstate.list_ledger(),
+            Menu::RequestFunds => Bstate.request_funds(),
+            Menu::SendFunds => Bstate.transfer_funds(),
+            Menu::Invalid => println!("Invalid selection")
         }
 
     }
@@ -66,6 +54,18 @@ impl Menu {
         println!("4. List Ledger");
         println!("5. Request Funds");
         println!("6. Send Funds");
+    }
+
+    pub fn convert_to_menu(entry: String)-> Menu {
+        return match entry.trim() {
+            "1" => Menu::Genesis,
+            "2" => Menu::CreateClientKeys,
+            "3" => Menu::ListClientKeys,
+            "4" => Menu::ListLedger,
+            "5" => Menu::RequestFunds,
+            "6" => Menu::SendFunds,
+            _ => Menu::Invalid,
+        };
     }
 }
 
