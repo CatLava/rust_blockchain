@@ -29,6 +29,12 @@ impl MessageQueue {
         
     }
 
+    pub fn clear_queue(&mut self) {
+        let mut q: Vec<BlockchainMessage> = Vec::new();
+        self.queue = q;
+        println!("cleared Message queue");
+    }
+
     pub fn print_q(&mut self) {
         println!("q message");
         for m in self.queue.iter() {
@@ -52,7 +58,7 @@ pub struct StringedMessageQueue {
 }
 
 impl StringedMessageQueue {
-    pub fn new(message_queue: MessageQueue) -> Self {
+    pub fn new(message_queue: &MessageQueue) -> Self {
         let mut q: Vec<StringedBlockchainMessage> = Vec::new();
         for m in message_queue.queue.iter() {
             let mut q1 = StringedBlockchainMessage{

@@ -7,7 +7,7 @@ use super::{block::{Block, TransactionData,  }};
 use secp256k1::{Secp256k1, Message, Signing, All, SecretKey, PublicKey};
 use sha2::{Sha256, Digest};
 use super::message_handler::MessageQueue;
-use super::transaction_handler::{Balance, Transaction};
+use super::transaction_handler::{Balance, Transaction, TransactionType};
 use std::borrow::BorrowMut;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -37,10 +37,11 @@ impl Blockchain{
         let genesis_keys = Wallet::generate_wallet_keys();
         let t1 = Transaction {
             receiver_public_key: genesis_keys.public_key.to_string(),
+            sender_public_key: TransactionType::emit,
             amount_of_coins: 8,
             message: Some("hello".to_string()),
         };
-        let message = genesis_keys.sign_transaction(t1);
+        let message = genesis_keys.sign_transaction(&t1);
         let mut message_q = MessageQueue::new();
         message_q.add_message_to_q(&message);
 
@@ -49,7 +50,13 @@ impl Blockchain{
             public_key: genesis_keys.public_key.to_string(),
             coins: 10,
         };
-        let ledger = BlockchainLedger::new(initial_coins);
+        // need to fix this reference, potentially with lifetimes down the line
+        let ledger = BlockchainLedger::new(&Transaction {
+            receiver_public_key: genesis_keys.public_key.to_string(),
+            sender_public_key: TransactionType::emit,
+            amount_of_coins: 8,
+            message: Some("hello".to_string()),
+        });
         // Genesis block creation
         let mut genesis_block = Block {
             index: 0,
@@ -57,7 +64,7 @@ impl Blockchain{
             proof_of_work: u64::default(),
             previous_hash: String::default(),
             hash: String::default(),
-            data: StringedMessageQueue::new(message_q),
+            data: StringedMessageQueue::new(&message_q),
         };
         genesis_block.hash = genesis_block.generate_block_hash();
         println!("{:?}", genesis_block);
@@ -77,7 +84,14 @@ impl Blockchain{
     // Add a compute hash with a nonce
     // need to fix previous hash output
     // there is no state on this blockchain
-    pub fn add_block(&mut self, data_pass: MessageQueue) {
+    pub fn add_block(&mut self, data_pass: &MessageQueue) {
+        // iterating message queue for emit or transfer funds
+        for blockchain_message in data_pass.queue.iter() {
+            match &blockchain_message.message.sender_public_key {
+                TransactionType::emit => self.ledger.emit_funds(&blockchain_message.message),
+                TransactionType::transfer(key) => self.ledger.transfer_funds(&blockchain_message.message, &key)
+            }
+        }
         let mut new_block = Block::new(
             self.chain.len() as u64,
             self.chain[&self.chain.len() - 1].hash.clone(),
@@ -106,9 +120,9 @@ pub struct BlockchainLedger {
 
 
 impl BlockchainLedger {
-    pub fn new(balance: Balance) -> Self {
+    pub fn new(transaction: &Transaction) -> Self {
         return BlockchainLedger{ 
-            ledger: HashMap::from([(balance.public_key, balance.coins)])
+            ledger: HashMap::from([(transaction.receiver_public_key.to_owned(), transaction.amount_of_coins)])
         }
     }
     pub fn check_balance(&mut self, pub_key: &String) -> &u16 {
@@ -134,19 +148,22 @@ impl BlockchainLedger {
     }
 
     pub fn reduce_funds(&mut self, transaction: &Transaction, sender_public_key: &String) {
+        println!("funds reduced");
         *self.ledger.get_mut(sender_public_key).unwrap() -= transaction.amount_of_coins; 
     }
 
     pub fn transfer_funds(&mut self, transaction: &Transaction, sender_public_key: &String) {
         if self.ledger.contains_key(sender_public_key) {
             // need to check balance first
-            if self.check_balance(&sender_public_key) > &transaction.amount_of_coins { 
+            if self.check_balance(&sender_public_key) >= &transaction.amount_of_coins { 
                 self.emit_funds(&transaction);
                 self.reduce_funds(&transaction, &sender_public_key);
                 println!("Successful transaction, check the ledger")
             } else {
                 println!("no transaction made, insufficient funds")
             }
+        } else {
+            println!("unable to transfer funds")
         }
     }
 }

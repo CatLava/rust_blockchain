@@ -3,9 +3,10 @@ use std::io;
 use rand::Error;
 
 use crate::models::block::Block;
-use crate::models::transaction_handler::Transaction;
+use crate::models::message_handler::MessageQueue;
+use crate::models::transaction_handler::{Transaction, TransactionType};
 use crate::models::{blockchain::*, self};
-use crate::models::key_gen::Wallet;
+use crate::models::key_gen::{Wallet, BlockchainMessage};
 use std::process;
 
 
@@ -14,6 +15,8 @@ pub fn main() {
     
     loop {
         Menu::show_menu();
+        println!("Messages in queue: {:?}", &Bstate.messsages.queue.len());
+        println!("Block height: {:?}", &Bstate.blockchain.chain.len());
         let mut entry = String::new();
         io::stdin().read_line(&mut entry).expect("need a number");
         println!("Selection, {:?}", entry.trim());
@@ -27,6 +30,7 @@ pub fn main() {
             Menu::ListLedger => Bstate.list_ledger(),
             Menu::RequestFunds => Bstate.request_funds(),
             Menu::SendFunds => Bstate.transfer_funds(),
+            Menu::MineBlock => Bstate.mine_block(),
             Menu::Invalid => println!("Invalid selection")
         }
 
@@ -42,6 +46,7 @@ pub enum Menu {
     RequestFunds,
     ListLedger,
     SendFunds,
+    MineBlock,
     Invalid
 }
 
@@ -54,6 +59,7 @@ impl Menu {
         println!("4. List Ledger");
         println!("5. Request Funds");
         println!("6. Send Funds");
+        println!("7. Mine Block");
     }
 
     pub fn convert_to_menu(entry: String)-> Menu {
@@ -64,6 +70,7 @@ impl Menu {
             "4" => Menu::ListLedger,
             "5" => Menu::RequestFunds,
             "6" => Menu::SendFunds,
+            "7" => Menu::MineBlock,
             _ => Menu::Invalid,
         };
     }
@@ -74,6 +81,7 @@ pub struct State {
     state: bool,
     blockchain: Blockchain,
     wallets: Vec<Wallet>,
+    messsages: MessageQueue,
 }
 
 impl State {
@@ -82,6 +90,7 @@ impl State {
             state: false,
             blockchain: Blockchain::new(1),
             wallets: vec![],
+            messsages: MessageQueue::new(),
         }
     }
 
@@ -103,14 +112,16 @@ impl State {
     pub fn list_keys(&mut self) {
         let mut count = 0;
         for key in self.wallets.iter() {
-            println!("{}: {:?}", count,  key.public_key);
+            println!("{}: {:?}", count, key.public_key.to_string());
             count += 1;
         }
     }
 
     pub fn request_funds(&mut self) {
-        let transaction = match self.construct_transaction() {
-            Ok(v) => {self.blockchain.ledger.emit_funds(&v);
+        let transaction = match self.construct_transaction(TransactionType::emit) {
+            Ok(v) => {
+                                    self.messsages.add_message_to_q(&v);
+                                    self.messsages.print_q();
                                     println!("Funds emitted")},
             Err(e) => println!("error {e:?}"),
         };
@@ -118,16 +129,19 @@ impl State {
     }
 
     pub fn transfer_funds(&mut self) {
-        let transaction1 = self.construct_transaction().unwrap();
-        let sender_key = self.select_key().unwrap();
-        self.blockchain.ledger.transfer_funds(&transaction1, &sender_key)
+        println!("who is sending?");
+        let sender_key = self.select_key().unwrap().public_key.to_string();
+        println!("which account to send to: ");
+        let transaction1 = self.construct_transaction(TransactionType::transfer(sender_key)).unwrap();
+        println!("Added message to queue");
+        self.messsages.add_message_to_q(&transaction1);
     }
 
-    fn select_key(&mut self) -> Option<String> {
+    fn select_key(&mut self) -> Option<&Wallet> {
         let mut count = 0;
         println!("Select Key:");
         for key in self.wallets.iter() {
-            println!("{}: {:?}", count,  key.public_key);
+            println!("{}: {:?}", count,  key.public_key.to_string());
             count += 1;
         }
         let mut entry = String::new();
@@ -143,22 +157,32 @@ impl State {
         
         let key = self.wallets.get(entry as usize);
         
-        return Some(key.unwrap().public_key.to_string())
+        return Some(key.unwrap())
 
     }
 
-    fn construct_transaction(&mut self) -> Result<Transaction, &'static str> {
-        let pub_key = self.select_key();
-        if pub_key == None {
+    fn construct_transaction(&mut self, transaction_type: TransactionType) -> Result<BlockchainMessage, &'static str> {
+        let wallet = self.select_key().unwrap();
+        let pub_key = &wallet.public_key.to_string();
+        if pub_key == "" {
             println!("Invalid key request");
             return Err("invalid key")
         }
         let transaction = Transaction {
-            receiver_public_key: pub_key.unwrap(),
+            receiver_public_key: pub_key.to_owned(),
+            sender_public_key: transaction_type,
             amount_of_coins: 10,
             message: Some("hello".to_string()),
         };
-        Ok(transaction)
+        let blockchain_message = wallet.sign_transaction(&transaction);
+        Ok(blockchain_message)
+    }
+
+    pub fn mine_block(&mut self) {
+        // need significant error handling here
+        // Need much more Result handling
+        self.blockchain.add_block(&self.messsages);
+        self.messsages.clear_queue();
     }
 
     pub fn list_ledger(&mut self) {

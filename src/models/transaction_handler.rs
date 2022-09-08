@@ -1,5 +1,5 @@
 // This will handle transactions and balances
-use std::collections::HashMap;
+use std::{collections::HashMap, string};
 use serde::Serialize;
 
 use super::blockchain::BlockchainLedger;
@@ -10,8 +10,15 @@ pub struct Balance {
 }
 
 #[derive(Debug,  Clone, Serialize, Hash)]
+pub enum TransactionType {
+    emit,
+    transfer(String)
+}
+
+#[derive(Debug,  Clone, Serialize, Hash)]
 pub struct Transaction {
     pub receiver_public_key: String,
+    pub sender_public_key: TransactionType,
     pub amount_of_coins: u16,
     pub message: Option<String> // non-essential option for message in a transaction
 }
