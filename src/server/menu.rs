@@ -8,7 +8,7 @@ use crate::models::transaction_handler::{Transaction, TransactionType};
 use crate::models::{blockchain::*, self};
 use crate::models::key_gen::{Wallet, BlockchainMessage};
 use std::process;
-
+use super::server;
 
 pub fn main() {
     let mut Bstate = State::new();
@@ -122,6 +122,7 @@ impl State {
             Ok(v) => {
                                     self.messsages.add_message_to_q(&v);
                                     self.messsages.print_q();
+                                    server::post_transaction("localhost:1337".to_string(), &v);
                                     println!("Funds emitted")},
             Err(e) => println!("error {e:?}"),
         };
