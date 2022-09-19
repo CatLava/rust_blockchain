@@ -9,6 +9,7 @@ use crate::models::{blockchain::*, self};
 use crate::models::key_gen::{Wallet, BlockchainMessage};
 use std::process;
 use super::server;
+use super::rocket_server;
 
 pub fn main() {
     let mut Bstate = State::new();
@@ -99,6 +100,8 @@ impl State {
             println!("Blockchain already running");
             return 
         }
+        let run = rocket_server::main();
+        run;
         self.state = true;
 
     }
@@ -122,10 +125,12 @@ impl State {
             Ok(v) => {
                                     self.messsages.add_message_to_q(&v);
                                     self.messsages.print_q();
-                                    server::post_transaction("localhost:1337".to_string(), &v);
                                     println!("Funds emitted")},
             Err(e) => println!("error {e:?}"),
         };
+        println!("attempting request");
+        let test = server::post_transaction("http://localhost:1337".to_string());
+        test;
         transaction;
     }
 
