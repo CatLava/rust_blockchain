@@ -1,5 +1,6 @@
 use std::net::{TcpListener, TcpStream};
 use std::io::{prelude::*, BufReader};
+
 use std::sync::mpsc::SendError;
 use http::request::Request;
 
@@ -15,14 +16,17 @@ pub fn run() {
     println!("server listening");
     for stream in listener.incoming() {
         let stream = stream.unwrap();
-        println!("connection established");
-        handle_data(stream);
+        println!("connection established {:?}", stream);
+        handle_data(stream); 
     }
     // input from menu
 }
 
 fn handle_data(mut stream: TcpStream) {
-    let buf_reader = BufReader::new(&mut stream);
+    //let mut buffer: [u8]= [1024];
+    //println!("Your stream {:?}", stream.read(&mut [0; 1024]).unwrap());
+    let mut buf_reader = BufReader::new(&mut stream);
+    //println!("{:?}", &buf_reader.read_to_string());
     let http_request: Vec<_> = buf_reader
         .lines()
         .map(|result| result.unwrap())
@@ -34,19 +38,22 @@ fn handle_data(mut stream: TcpStream) {
     }
 
     let response = "HTTP/1.1 200 OK";
-
+    println!("sending response");
     stream.write(response.as_bytes()).unwrap();
     stream.flush().unwrap()
     
 }
 
 #[tokio::main]
-pub async fn post_transaction(uri: String) { //, data: &BlockchainMessage
+pub async fn post_transaction(uri: String) -> Result<(), Box<dyn std::error::Error>> { //, data: &BlockchainMessage
     println!("sending get");
     let client = reqwest::Client::new();
-    let res = client.post("http://localhost:1337/blockchain").body("send this and this").send().await;
-
+    let res = client.post("http://localhost:1337/blockchain")
+        .header("Accept", "text/plain")
+        .body("what is the contente").send().await;
+    println!("requestsekljkljtset");
     println!("request sent {:?}", res);
+    Ok(())
     
     
 }

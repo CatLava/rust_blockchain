@@ -44,6 +44,7 @@ impl MessageQueue {
     }
 }
 
+// a stringed Message Queue is necessary for hashing and adding to the blockchain
 #[derive(Debug, Clone, Hash, Serialize, Deserialize)]
 pub struct StringedBlockchainMessage {
     pub message: String,

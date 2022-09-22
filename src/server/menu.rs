@@ -100,7 +100,8 @@ impl State {
             println!("Blockchain already running");
             return 
         }
-        let run = rocket_server::main();
+        //let run = rocket_server::main();
+        let run = server::run();
         run;
         self.state = true;
 
