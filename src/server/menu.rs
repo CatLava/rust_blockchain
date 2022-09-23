@@ -25,6 +25,7 @@ pub fn main() {
         // this should be a match statement
         // menu should map to functions with no output or same output
         match mat {
+            Menu::Server => server::run(),
             Menu::Genesis => Bstate.gensis(),
             Menu::CreateClientKeys => Bstate.create_keys(),
             Menu::ListClientKeys => Bstate.list_keys(),
@@ -41,6 +42,7 @@ pub fn main() {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Menu {
+    Server,
     Genesis,
     CreateClientKeys,
     ListClientKeys,
@@ -54,6 +56,7 @@ pub enum Menu {
 impl Menu {
     pub fn show_menu() {
         println!("This is a simple blockchain: Options below");
+        println!("0. Start node Server");
         println!("1. Create blockchain, genesis node");
         println!("2. Create client keys");
         println!("3. List client keys");
@@ -65,6 +68,7 @@ impl Menu {
 
     pub fn convert_to_menu(entry: String)-> Menu {
         return match entry.trim() {
+            "0" => Menu::Server,
             "1" => Menu::Genesis,
             "2" => Menu::CreateClientKeys,
             "3" => Menu::ListClientKeys,
@@ -100,10 +104,6 @@ impl State {
             println!("Blockchain already running");
             return 
         }
-        //let run = rocket_server::main();
-        let run = server::run();
-        run;
-        self.state = true;
 
     }
 
@@ -129,9 +129,6 @@ impl State {
                                     println!("Funds emitted")},
             Err(e) => println!("error {e:?}"),
         };
-        println!("attempting request");
-        let test = server::post_transaction("http://localhost:1337".to_string());
-        test;
         transaction;
     }
 
